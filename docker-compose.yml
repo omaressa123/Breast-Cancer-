@@ -1,0 +1,37 @@
+version: '3'
+
+services:
+  jobmanager:
+    image: flink:1.17
+    command: jobmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./batch_job.py:/opt/flink/job/batch_job.py
+      - ./data:/opt/flink/job/data
+    working_dir: /opt/flink/job
+
+  taskmanager:
+    image: flink:1.17
+    command: taskmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+    depends_on:
+      - jobmanager
+    volumes:
+      - ./batch_job.py:/opt/flink/job/batch_job.py
+      - ./data:/opt/flink/job/data
+    working_dir: /opt/flink/job
+
+  submit:
+    image: flink:1.17
+    depends_on:
+      - jobmanager
+      - taskmanager
+    entrypoint: ["/bin/bash", "-c", "flink run -py /opt/flink/job/batch_job.py"]
+    volumes:
+      - ./batch_job.py:/opt/flink/job/batch_job.py
+      - ./data:/opt/flink/job/data
+    working_dir: /opt/flink/job
